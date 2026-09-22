@@ -1,0 +1,156 @@
+---
+[← Предыдущий: M02-L01](lesson-M02-L01-value-ref-types.md) | [⬆ К модулю M02](../README.md) | [Следующий: M02-L03 →](lesson-M02-L03-var-const.md)
+---
+
+### Урок M02-L02: Примитивы: int, double, decimal, bool, char, string / Primitives: int, double, decimal, bool, char, string
+
+**Время / Time:** 30 мин теория + 45 мин практика
+
+#### Теория / Theory
+
+В C# типы данных — это фундамент. Когда вы объявляете переменную, вы говорите компилятору: «здесь будет храниться значение такого-то вида». От этого зависит, сколько памяти выделится и какие операции допустимы. Все встроенные типы C# имеют псевдонимы в .NET — например, `int` это `System.Int32`, а `string` это `System.String`. Псевдонимы удобнее, но под капотом — настоящие типы платформы.
+
+**Целые числа.** Для счёта предметов используют целые типы. `int` — самый частый: диапазон от −2 147 483 648 до 2 147 483 647 (≈ ±2,1 млрд). Если этого мало — `long`: ±9,2 квинтиллиона. Для маленьких значений есть `byte` (0–255) и `short` (−32 768 … 32 767). Аналогия: целые типы — это коробки разного размера на складе; нет смысла брать фуру, чтобы перевезти пакет молока, но и маленький ящик не вместит паллету. Литерал `long` пишется с суффиксом `L`: `long pop = 8_000_000_000L;`. Без суффикса компилятор решит, что это `int`, и выдаст ошибку переполнения. Беззнаковые варианты — `uint` (суффикс `u`) и `ulong` (суффикс `ul`): они удобны для счётчиков, которые физически не бывают отрицательными, но в публичных API их избегают из-за проблем совместимости с другими языками.
+
+**С плавающей точкой.** `double` — 64-битный тип с ≈15–17 значащими цифрами. Удобен для физических расчётов, координат, процентов. `float` — 32-битный (≈7 цифр), суффикс `f`. Аналогия: `double` — рулетка с миллиметровой шкалой; `float` — школьная линейка. Оба хранят значения в двоичной форме, поэтому `0.1 + 0.2` не равно ровно `0.3` — это свойство формата IEEE 754, а не баг. Сравнивать `double` на равенство нужно через допуск (epsilon), а не через `==`.
+
+**decimal для финансов.** Здесь кроется главное правило: деньги считают в `decimal`, а не в `double`. `decimal` — 128-битный тип с 28–29 значащими цифрами, хранится в десятичной (base-10), а не двоичной форме. Поэтому `0.1m + 0.2m` даёт ровно `0.3m`. Суффикс литерала — `m`. Используйте `decimal` везде, где важна точность до копейки: цены, налоги, скидки, проценты по кредиту, курс валют. `double` оставьте для научных расчётов — он быстрее, но «грязнее» и может накапить погрешность на тысячах операций.
+
+**bool.** Логический тип: всего два значения, `true` и `false`. Один байт. Незаменим в условиях (`if`, `while`), флагах состояния, результатах проверок. В отличие от C/C++, в C# `bool` не конвертируется в `int` автоматически — это защищает от ошибок вида `if (x = 5)`, где присваивание перепутано с сравнением.
+
+**char.** Один Unicode-символ в UTF-16, два байта. Пишется в одинарных кавычках: `'A'`, `'₽'`, `'\u20BD'`. Не путать со `string` — это уже последовательность символов.
+
+**string.** Последовательность символов, ссылочный тип, но неизменяемый (immutable). В двойных кавычках: `"Hello"`. Любая «модификация» строки на самом деле создаёт новый объект. C# 11+/12 поддерживает сырые строковые литералы (`"""..."""`) — удобно для многострочного текста, JSON, SQL и регулярных выражений без экранирования обратных слешей и кавычек.
+
+**Суффиксы кратко:** `L` — long, `f` — float, `m` — decimal, `u` — uint, `ul` — ulong. Суффиксы обязательны, когда литерал не помещается в `int`/`double` по умолчанию, или когда нужно явно задать тип для перегрузки методов. Подчёркивания в числовых литералах (`1_000_000`) — легальный разделитель разрядов, улучшающий читаемость.
+
+#### Theory (EN)
+
+In C#, data types are the foundation. When you declare a variable, you tell the compiler "this slot will hold a value of this kind." That decision drives how much memory is allocated and which operations are legal. Every built-in C# type is an alias for a .NET type — `int` is `System.Int32`, `string` is `System.String`. The aliases are friendlier, but the real platform types live underneath.
+
+**Integers.** For counting things you use integral types. `int` is the workhorse: range −2,147,483,648 to 2,147,483,647 (about ±2.1 billion). When that is not enough, reach for `long`: ±9.2 quintillion. For small values there is `byte` (0–255) and `short` (−32,768 … 32,767). Analogy: integral types are boxes of different sizes in a warehouse — no point hiring a truck to move a milk carton, but a tiny crate will not fit a pallet. A `long` literal needs the `L` suffix: `long pop = 8_000_000_000L;`. Without the suffix the compiler treats the number as `int` and reports an overflow. Unsigned variants are `uint` (suffix `u`) and `ulong` (suffix `ul`) — handy for counters that are physically never negative, but avoided in public APIs because of cross-language interop headaches.
+
+**Floating point.** `double` is the 64-bit type with about 15–17 significant digits. Good for physics, coordinates, percentages. `float` is the 32-bit sibling (≈7 digits), suffix `f`. Analogy: `double` is a tape measure with millimetre marks; `float` is a school ruler. Both store values in binary, so `0.1 + 0.2` is not exactly `0.3` — that is a property of the IEEE 754 format, not a bug. Compare `double` values with an epsilon tolerance, never with bare `==`.
+
+**decimal for money.** Here is the key rule: do money math in `decimal`, never in `double`. `decimal` is a 128-bit type with 28–29 significant digits, stored in decimal (base-10) form. That is why `0.1m + 0.2m` equals exactly `0.3m`. The literal suffix is `m`. Use `decimal` wherever cent precision matters: prices, taxes, discounts, loan interest, exchange rates. Leave `double` for science — it is faster but "dirtier" and can accumulate drift across thousands of operations.
+
+**bool.** The logical type: just two values, `true` and `false`. One byte. Essential in conditions (`if`, `while`), state flags, validation results. Unlike C/C++, C# does not auto-convert `bool` to `int`, which guards against mistakes like `if (x = 5)` where assignment is confused with comparison.
+
+**char.** A single Unicode character in UTF-16, two bytes. Written in single quotes: `'A'`, `'₽'`, `'\u20BD'`. Do not confuse it with `string`, which is a sequence of chars.
+
+**string.** A sequence of characters, a reference type but immutable. In double quotes: `"Hello"`. Any "modification" of a string actually creates a new object. C# 11+/12 supports raw string literals (`"""..."""`) — handy for multiline text, JSON, SQL, and regex without escaping backslashes and quotes.
+
+**Suffixes in short:** `L` — long, `f` — float, `m` — decimal, `u` — uint, `ul` — ulong. Suffixes are required whenever a literal would otherwise not fit the default `int`/`double`, or when you want to pin the type for method overload resolution. Underscores in numeric literals (`1_000_000`) are a legal digit-grouping separator that improves readability.
+
+#### Пример кода / Code Example
+
+```csharp
+// C# 12 / .NET 8 — top-level statements
+// Демонстрация примитивных типов / Primitive types demo
+
+using System;
+
+// --- Целые / Integers ---
+int apples = 12;                       // 32 бита, по умолчанию для счёта / default for counting
+long worldPop = 8_100_000_000L;        // суффикс L обязателен / L suffix required
+byte age = 255;                        // 0..255, без знака / unsigned
+uint visitors = 4_000_000_000u;        // суффикс u / u suffix
+ulong stars = 10_000_000_000ul;        // суффикс ul / ul suffix
+
+Console.WriteLine($"apples={apples} (int), worldPop={worldPop:N0} (long)");
+Console.WriteLine($"age={age} (byte), visitors={visitors:N0} (uint)");
+
+// --- С плавающей точкой / Floating point ---
+double coord = 55.7558;                // 64 бита, по умолчанию для дробей / default for fractions
+float temp = 36.6f;                    // суффикс f / f suffix
+double binarySum = 0.1 + 0.2;          // НЕ равно ровно 0.3 / NOT exactly 0.3
+Console.WriteLine($"coord={coord}, temp={temp}, 0.1+0.2={binarySum} (внимание / note!)");
+
+// --- decimal для финансов / decimal for money ---
+decimal price = 19.99m;                // суффикс m / m suffix
+decimal tax = price * 0.20m;
+decimal total = price + tax;           // ровно до копейки / exact to the cent
+Console.WriteLine($"price={price:C}, tax={tax:C}, total={total:C}");
+
+// --- bool / logical ---
+bool isPaid = true;
+if (isPaid)
+{
+    Console.WriteLine("Заказ оплачен / Order paid");
+}
+
+// --- char ---
+char currency = '₽';                   // Unicode UTF-16
+char euro = '\u20AC';                  // €
+Console.WriteLine($"currency={currency}, euro={euro}");
+
+// --- string + raw string literal ---
+string greeting = "Привет, мир! / Hello, world!";
+string json = """
+{
+  "course": "C# Basics",
+  "module": "M02",
+  "lesson": "L02"
+}
+""";
+Console.WriteLine(greeting);
+Console.WriteLine(json);
+
+// --- Pattern matching: выбор описания по типу / pattern match by runtime type ---
+object sample = 42;
+string description = sample switch
+{
+    int i when i < 0   => "Отрицательное целое / Negative integer",
+    int i              => $"Целое / Integer: {i}",
+    decimal d          => $"Деньги / Money: {d:C}",
+    double dd          => $"Дробь / Double: {dd}",
+    bool b             => $"Логическое / Boolean: {b}",
+    string s           => $"Строка / String: {s}",
+    char c             => $"Символ / Char: {c}",
+    _                  => "Неизвестно / Unknown"
+};
+Console.WriteLine(description);
+```
+
+#### Best Practices
+
+- Считайте деньги в `decimal`, физику — в `double`, счётчики — в `int`. Тип должен отражать природу значения.
+- Используйте суффиксы (`L`, `m`, `f`, `u`, `ul`) явно — это документирует намерение и защищает от переполнения литерала.
+- Сравнивайте `double`/`float` через допуск (epsilon), а не через `==`; для `decimal` прямое равенство безопасно.
+- Do money math in `decimal`, physics in `double`, counters in `int`. The type should mirror the nature of the value.
+- Use suffixes (`L`, `m`, `f`, `u`, `ul`) explicitly — it documents intent and prevents literal overflow.
+- Compare `double`/`float` with an epsilon tolerance, never with bare `==`; for `decimal` direct equality is safe.
+
+#### Частые ошибки / Common Mistakes
+
+- `double money = 0.1 + 0.2;` → для денег используйте `decimal` (`0.1m + 0.2m`) (RU)
+- `long big = 5_000_000_000;` без `L` → компилятор сочтёт литерал `int` и выдаст ошибку; добавьте `L` (RU)
+- `decimal d = 1.5;` без `m` → литерал `1.5` это `double`; пишите `1.5m` (RU)
+- `char c = "A";` → `char` в одинарных кавычках `'A'`, `string` в двойных `"A"` (RU)
+- `if (x = 5)` → присваивание вместо сравнения; C# защитит, но следите за `==` в условиях (RU)
+- Using `double` for money → use `decimal` (`0.1m + 0.2m`) (EN)
+- `long big = 5_000_000_000;` without `L` → compiler reads the literal as `int` and errors; add `L` (EN)
+- `decimal d = 1.5;` without `m` → literal `1.5` is `double`; write `1.5m` (EN)
+- `char c = "A";` → `char` uses single quotes `'A'`, `string` uses double quotes `"A"` (EN)
+- `if (x = 5)` → assignment instead of comparison; C# blocks it, but watch `==` in conditions (EN)
+
+#### Чек-лист самопроверки / Self-check Checklist
+
+- [ ] Я знаю, когда выбрать `decimal`, а когда `double` (RU)
+- [ ] Я помню суффиксы: `L` (long), `f` (float), `m` (decimal), `u` (uint), `ul` (ulong) (RU)
+- [ ] Я отличаю `char` (одиночный символ, одинарные кавычки) от `string` (последовательность, двойные кавычки) (RU)
+- [ ] Я понимаю, почему `0.1 + 0.2 != 0.3` в `double`, и знаю, как это обойти (RU)
+- [ ] Я знаю, что `string` неизменяем, и могу объяснить последствия для производительности (RU)
+- [ ] I know when to choose `decimal` vs `double` (EN)
+- [ ] I remember suffixes: `L` (long), `f` (float), `m` (decimal), `u` (uint), `ul` (ulong) (EN)
+- [ ] I distinguish `char` (single char, single quotes) from `string` (sequence, double quotes) (EN)
+- [ ] I understand why `0.1 + 0.2 != 0.3` in `double`, and how to work around it (EN)
+- [ ] I know `string` is immutable and can explain the performance consequences (EN)
+
+#### Ресурсы / Resources
+
+- [Microsoft Learn — https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/built-in-types — Встроенные типы C# / C# built-in types]
+- [Microsoft Learn — https://learn.microsoft.com/dotnet/api/system.decimal — Тип Decimal для финансовых расчётов / System.Decimal for financial calculations]
+
+---
+[← Предыдущий: M02-L01](lesson-M02-L01-value-ref-types.md) | [⬆ К модулю M02](../README.md) | [Следующий: M02-L03 →](lesson-M02-L03-var-const.md)

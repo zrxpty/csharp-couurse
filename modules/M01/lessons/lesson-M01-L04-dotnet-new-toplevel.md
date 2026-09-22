@@ -1,0 +1,166 @@
+---
+[← Предыдущий: M01-L03](lesson-M01-L03-sdk-ide-cli.md) | [⬆ К модулю M01](../README.md) | [Следующий: M01-L05 →](lesson-M01-L05-build-run.md)
+---
+### Урок M01-L04: dotnet new, структура проекта, top-level statements / dotnet new, project structure, top-level statements
+
+**Время / Time:** 30 мин теория + 45 мин практика
+
+#### Теория / Theory
+
+Когда вы устанавливаете .NET SDK, вместе с ним приходит CLI-утилита `dotnet`. Главная команда для создания новых проектов — `dotnet new`. Она работает по шаблонам: вы указываете короткое имя шаблона (short name), и утилита разворачивает набор файлов на диск. Самый частый шаблон для начинающих — `console`, поэтому команда выглядит так: `dotnet new console -n HelloApp`. Флаг `-n` задаёт имя проекта и одновременно имя папки; если его опустить, проект создастся в текущей папке с именем этой папки. После выполнения вы получаете минимальный, но рабочий каркас: файл проекта `.csproj`, исходник `Program.cs` и служебные каталоги `obj/` и `bin/`.
+
+Файл `.csproj` — это «паспорт» проекта на языке XML. В нём записано: какой `TargetFramework` используется (например, `net8.0`), какой тип вывода (`OutputType` — `Exe` для исполняемого файла, `Library` для библиотеки), какие пакеты NuGet подключены и какие свойства сборки включены. Аналогия: `.csproj` — это чертёж и спецификация для сборочного конвейера; сам код в нём не живёт, но без него компилятор не узнает, что и как собирать. Для простых консольных проектов файл остаётся крошечным, но по мере роста проекта в нём появляются ссылки на другие проекты, пакеты и условия сборки.
+
+`Program.cs` — точка входа в программу. В современном C# (начиная с C# 9, а в .NET 6+ это поведение по умолчанию) применяется механизм **top-level statements**: вы пишете инструкции прямо на верхнем уровне файла, без объявления класса и метода `Main`. Компилятор сам «оборачивает» их в синтетический метод `Main`. Это drastically сокращает церемониальный код: классический `class Program { static void Main() { ... } }` из 5–6 строк превращается в одну. Если в проекте только один файл с top-level statements, он и становится точкой входа; двух таких файлов быть не может — компилятор выдаст ошибку.
+
+Директивы `using` подключают пространства имён. Например, `using System;` позволяет писать `Console.WriteLine` вместо `System.Console.WriteLine`. Начиная с .NET 6 в шаблоне `console` включён *implicit usings*: набор частых пространств имён (`System`, `System.IO`, `System.Linq` и др.) добавляется неявно через файл `GlobalUsings.cs`, поэтому явных `using` в `Program.cs` почти нет. Глобальный `using` можно объявить и вручную: `global using System.Text;`.
+
+**Namespace** группирует типы логически. Есть две формы: классическая (блок в фигурных скобках) и **file-scoped namespace** (с точкой с запятой в конце строки): `namespace HelloApp;`. Вторая форма появилась в C# 10, экономит один уровень отступов и считается современной нормой. Для top-level statements namespace указывать не обязательно, но для библиотек и крупных проектов он необходим, чтобы избежать конфликтов имён.
+
+Каталоги `obj/` и `bin/` — служебные. В `obj/` лежат промежуточные артефакты сборки (скомпилированные куски, кэш инкрементальной сборки, восстановленные пакеты), в `bin/` — финальный вывод: `bin/Debug/net8.0/HelloApp.dll` и `HelloApp.exe` (на Windows). Эти папки генерируются автоматически и не кладутся в систему контроля версий; в `.gitignore` для .NET они уже учтены стандартным шаблоном. Удалять их вручную можно без страха — `dotnet build` создаст заново.
+
+Итого: `dotnet new` даёт скелет, `.csproj` описывает сборку, `Program.cs` с top-level statements — лаконичную точку входа, `obj/bin` — машинерия вывода. Понимание этой структуры — фундамент для всего дальнейшего курса.
+
+#### Theory (EN)
+
+When you install the .NET SDK, it ships with a CLI utility called `dotnet`. The main command for creating new projects is `dotnet new`. It is template-driven: you pass a short name of a template, and the tool scaffolds a set of files onto disk. The most common starter template is `console`, so the command looks like `dotnet new console -n HelloApp`. The `-n` flag sets both the project name and the folder name; if you omit it, the project is created in the current folder and takes the folder's name. After execution you get a minimal but runnable skeleton: a `.csproj` project file, a `Program.cs` source file, and the service directories `obj/` and `bin/`.
+
+The `.csproj` file is the project's "passport", written in XML. It records the `TargetFramework` (e.g. `net8.0`), the `OutputType` (`Exe` for an executable, `Library` for a class library), the NuGet packages referenced, and various build properties. Analogy: the `.csproj` is a blueprint and a bill of materials for the build pipeline; no actual code lives inside it, yet without it the compiler would not know what or how to build. For a simple console project the file stays tiny, but as the project grows it accumulates project-to-project references, packages, and conditional build settings.
+
+`Program.cs` is the entry point of the program. Modern C# (since C# 9, and the default since .NET 6) uses **top-level statements**: you write statements directly at the top level of the file, without declaring a class or a `Main` method. The compiler synthesizes a `Main` method for you. This removes a lot of ceremony: the classic `class Program { static void Main() { ... } }` spanning five or six lines collapses to one. A project may contain at most one file with top-level statements; if there are two, the compiler reports an error. That single file becomes the entry point.
+
+The `using` directives bring namespaces into scope. For example, `using System;` lets you write `Console.WriteLine` instead of `System.Console.WriteLine`. Starting with .NET 6 the `console` template enables *implicit usings*: a set of common namespaces (`System`, `System.IO`, `System.Linq`, and others) is added implicitly through an auto-generated `GlobalUsings.cs`, which is why `Program.cs` shows almost no explicit `using` lines. You can also declare a global using manually: `global using System.Text;`.
+
+A **namespace** groups types logically. There are two forms: the classic brace-block form and the **file-scoped namespace** that ends with a semicolon: `namespace HelloApp;`. The latter arrived in C# 10, saves one indentation level, and is considered the modern default. For top-level statements a namespace is optional, but for libraries and larger projects it is essential to avoid name collisions.
+
+The `obj/` and `bin/` directories are service folders. `obj/` holds intermediate build artifacts (compiled fragments, incremental build cache, restored packages); `bin/` holds the final output such as `bin/Debug/net8.0/HelloApp.dll` and `HelloApp.exe` on Windows. These folders are generated automatically and are excluded from version control — the standard .NET `.gitignore` template already covers them. You can safely delete them by hand; `dotnet build` will recreate them.
+
+In summary: `dotnet new` gives you the skeleton, `.csproj` describes the build, `Program.cs` with top-level statements is a concise entry point, and `obj/bin` are the output machinery. Understanding this structure is the foundation for the rest of the course.
+
+#### Пример кода / Code Example
+
+```csharp
+// Program.cs — современная точка входа на C# 12 / .NET 8
+// Modern entry point using top-level statements (C# 12 / .NET 8)
+// Файл проекта: dotnet new console -n HelloApp, TargetFramework=net8.0
+// Project: dotnet new console -n HelloApp, TargetFramework=net8.0
+
+using System.Globalization;           // явный using / explicit using
+using static System.Console;          // статичный using / static using
+
+// Top-level statements: инструкции выполняются напрямую, без Main.
+// Top-level statements: statements run directly, no Main needed.
+
+string appName = "HelloApp";
+DateTime builtAt = DateTime.UtcNow;
+
+// Утиный интерполятор строк + неявный Culture для текущего потока.
+// String interpolation with invariant culture for stable output.
+WriteLine(CultureInfo.InvariantCulture, $"App: {appName}, built at {builtAt:O}");
+
+// Локальная функция допустима прямо в top-level файле.
+// A local function is allowed directly in a top-level file.
+int Add(int a, int b) => a + b;
+
+// Pattern matching (C# 12) и raw string literal для многострочного текста.
+// Pattern matching and a raw string literal for multi-line text.
+int[] numbers = [1, 2, 3, 4, 5];
+int sum = 0;
+foreach (var n in numbers)
+{
+    sum = Add(sum, n);
+}
+
+string banner = """
+    ┌──────────────────────────┐
+    │  dotnet new console demo │   // raw string literal / сырое строковое
+    └──────────────────────────┘
+    """;
+
+WriteLine(banner);
+WriteLine($"Sum = {sum}");
+
+// Аргументы командной строки доступны через args (объявлять не нужно).
+// Command-line args arrive via the implicit `args` parameter.
+if (args.Length > 0)
+{
+    WriteLine($"First arg: {args[0]}");
+}
+
+// return из top-level задаёт код выхода процесса.
+// `return` from top-level sets the process exit code.
+return 0;
+
+// ─────────────────────────────────────────────────────────────
+// Классическая форма — эквивалент всему выше (для сравнения):
+// Classic form — equivalent to everything above (for comparison):
+//   namespace HelloApp;
+//   class Program
+//   {
+//       static int Main(string[] args)
+//       {
+//           System.Console.WriteLine("Hello!");
+//           return 0;
+//       }
+//   }
+```
+
+```xml
+<!-- HelloApp.csproj — минимальный файл проекта / minimal project file -->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>              <!-- исполняемый файл / executable -->
+    <TargetFramework>net8.0</TargetFramework> <!-- целевой фреймворк / target -->
+    <ImplicitUsings>enable</ImplicitUsings>   <!-- неявные using / implicit usings -->
+    <Nullable>enable</Nullable>               <!-- nullable-аннотации / nullable -->
+    <LangVersion>latest</LangVersion>         <!-- C# 12+ -->
+  </PropertyGroup>
+
+</Project>
+```
+
+#### Best Practices
+
+- Держите `Program.cs` минимальным: точка входа должна запускать логику, а не содержать её. / Keep `Program.cs` minimal: the entry point should launch logic, not contain it.
+- Используйте file-scoped namespace (`namespace App;`) во всех новых файлах — меньше отступов, чище диффы. / Use file-scoped namespaces (`namespace App;`) in all new files — fewer indents, cleaner diffs.
+- Не коммитьте `bin/` и `obj/` — добавьте стандартный `.gitignore` для .NET. / Do not commit `bin/` and `obj/` — use the standard .NET `.gitignore`.
+- Один файл с top-level statements на проект, не больше. / Exactly one file with top-level statements per project, no more.
+- Фиксируйте `TargetFramework` осознанно: `net8.0` для актуального LTS, не используйте устаревшие без причины. / Pin `TargetFramework` deliberately: `net8.0` for current LTS; avoid legacy targets without a reason.
+- Явные `using` только для того, что не покрывают implicit/global usings — так файлы чище. / Add explicit `using` only for what implicit/global usings do not already cover — cleaner files.
+- Включайте `<Nullable>enable</Nullable>` с первого дня — дешевле научиться сразу, чем переписывать потом. / Enable `<Nullable>enable</Nullable>` from day one — cheaper to learn it now than to retrofit later.
+
+#### Частые ошибки / Common Mistakes
+
+- Два файла с top-level statements в одном проекте → ошибка `CS7022`. Оставьте точку входа только в `Program.cs`. / Two top-level-statements files in one project → `CS7022`. Keep the entry point only in `Program.cs`.
+- Правка `.csproj` вручную с опечаткой в XML → сборка падает с непонятной ошибкой. Проверяйте закрытие тегов. / Hand-editing `.csproj` with an XML typo → cryptic build failure. Verify tag closure.
+- Ручное удаление `obj/` во время работающей сборки → блокировка файлов. Сначала остановите `dotnet build`/отладку. / Deleting `obj/` during an active build → file locks. Stop `dotnet build`/debugging first.
+- Ожидание, что `args` нужно объявлять в top-level файле → конфликт с неявным параметром. Просто используйте `args` без объявления. / Declaring `args` in a top-level file → conflict with the implicit parameter. Just use `args` without declaring it.
+- Смешивание классического `Main` и top-level statements → компилятор не понимает, где вход. Выберите одну форму. / Mixing a classic `Main` with top-level statements → the compiler cannot find the entry. Pick one form.
+- Забытый `using` для редкого пространства имён (например, `System.Text.RegularExpressions`) → `CS0246: type not found`. / Missing `using` for a rare namespace (e.g. `System.Text.RegularExpressions`) → `CS0246: type not found`.
+- Запуск `dotnet new` не в той папке → проект создаётся там, где не ждали. Проверяйте `pwd`/текущий каталог. / Running `dotnet new` in the wrong folder → project lands where you did not expect. Check `pwd`/current directory.
+
+#### Чек-лист самопроверки / Self-check Checklist
+
+- [ ] Я могу создать проект командой `dotnet new console -n Имя`.
+- [ ] I can create a project with `dotnet new console -n Name`.
+- [ ] Я объясню назначение `.csproj`, `Program.cs`, `obj/`, `bin/`.
+- [ ] I can explain the purpose of `.csproj`, `Program.cs`, `obj/`, `bin/`.
+- [ ] Я отличаю top-level statements от классического `Main` и знаю ограничение «один файл на проект».
+- [ ] I distinguish top-level statements from a classic `Main` and know the one-file-per-project rule.
+- [ ] Я знаю разницу между обычным `using`, `global using` и implicit usings.
+- [ ] I know the difference between a plain `using`, `global using`, and implicit usings.
+- [ ] Я применяю file-scoped namespace и объясню его преимущество.
+- [ ] I use file-scoped namespaces and can explain their advantage.
+- [ ] Я не коммичу `bin/` и `obj/` и могу очистить проект пересборкой.
+- [ ] I do not commit `bin/` and `obj/` and can clean a project by rebuilding.
+
+#### Ресурсы / Resources
+
+- Microsoft Learn — https://learn.microsoft.com/dotnet/core/tools/dotnet-new — `dotnet new` и шаблоны проектов / `dotnet new` command and project templates (RU/EN)
+- Microsoft Learn — https://learn.microsoft.com/dotnet/csharp/fundamentals/program-structure/top-level-statements — Top-level statements / Top-level statements (RU/EN)
+- Microsoft Learn — https://learn.microsoft.com/dotnet/csharp/fundamentals/program-structure/namespaces — Пространства имён / Namespaces (RU/EN)
+- Microsoft Learn — https://learn.microsoft.com/dotnet/core/tools/dotnet-build — `dotnet build` и артефакты `obj/bin` / `dotnet build` and `obj/bin` artifacts (RU/EN)
+
+---
+[← Предыдущий: M01-L03](lesson-M01-L03-sdk-ide-cli.md) | [⬆ К модулю M01](../README.md) | [Следующий: M01-L05 →](lesson-M01-L05-build-run.md)

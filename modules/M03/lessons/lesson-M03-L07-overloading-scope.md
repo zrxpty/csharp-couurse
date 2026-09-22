@@ -1,0 +1,185 @@
+---
+[← Предыдущий: M03-L06](lesson-M03-L06-ref-out-in-params.md) | [⬆ К модулю M03](../README.md) | [Следующий: M03-L08 →](lesson-M03-L08-recursion.md)
+---
+
+### Урок M03-L07: Перегрузка методов, область видимости / Method overloading, scope
+
+**Время / Time:** 30 мин теория + 45 мин практика
+
+#### Теория / Theory
+
+Перегрузка методов (method overloading) — это возможность объявить в одном классе несколько методов с одинаковым именем, но разными списками параметров. Имя метода — это «слово» в словаре вашего API, а список параметров — «контекст», по которому компилятор понимает, какое именно значение слова имеется в виду. Подобно тому, как русское слово «косить» означает разное действие в контекстах «косить траву» и «косить под дурака», метод `Print` может печатать число, строку или дату — компилятор выберет нужный по типам аргументов.
+
+Различать перегрузки можно тремя способами: числом параметров, их типами и порядком типов. Возвращаемый тип **не** участвует в разрешении: два метода, отличающихся только типом возвращаемого значения, вызовут ошибку компиляции, потому что вызывающий код не всегда явно указывает тип, и компилятору было бы неоткуда узнать, какую версию выбрать.
+
+Разрешение перегрузки (overload resolution) происходит так: компилятор собирает все доступные методы с данным именем, отбрасывает неприменимые (где аргументы не преобразуются к типам параметров), а среди оставшихся выбирает «лучший». Лучший — тот, у которого преобразования аргументов «точнее»: например, `int` → `int` лучше, чем `int` → `double`, а `int` → `int` лучше, чем `int` → `long`. Если ни одна перегрузка не выигрывает однозначно, возникает ошибка неоднозначности (ambiguous call), и вам придется явно привести типы аргументов, чтобы подсказать компилятору выбор. Особенно коварны `params`-параметры, опциональные параметры и дженерики — они часто рождают сюрпризы.
+
+Область видимости (scope) — это регион программы, в котором имя доступно. В C# есть несколько уровней: блок (внутри `{ }`), метод, класс и сборка (через `internal`/`public`). Переменная, объявленная в блоке, живет только в этом блоке и исчезает, когда блок закрывается. Это похоже на комнаты в доме: в кухне вы видите кухонные предметы, но не те, что заперты в спальне.
+
+Теневое перекрытие (shadowing) возникает, когда во внутренней области объявляется имя, совпадающее с именем из внешней области. Поля класса и локальные переменные метода — классический пример: если метод объявляет локальную `count`, а у класса есть поле `count`, локальная «заслоняет» поле. Для поля это часто источник багов; чтобы явно обратиться к полю, используют `this.count`. В параметрах и локалях с одинаковым именем компилятор выдаст ошибку, защищая вас от путаницы.
+
+Локальные функции (local functions), появившиеся в C# 7 и улучшенные в последующих версиях, — это методы, объявленные внутри другого метода. Они видны только внутри родительского метода, автоматически «захватывают» его локальные переменные (замыкание) и удобны для вспомогательной логики, которая больше нигде не нужна. По сравнению с лямбда-выражениями локальные функции эффективнее (без лишних аллокаций делегата), поддерживают рекурсию естественно и дают компилятору возможность оптимизировать через `static`-модификатор, запрещающий захват.
+
+#### Theory (EN)
+
+Method overloading is the ability to declare several methods in the same class with the same name but different parameter lists. The method name is a "word" in the vocabulary of your API, and the parameter list is the "context" that lets the compiler decide which meaning applies. Just as the English word "run" means different things in "run a marathon" and "run a program", a `Print` method can print a number, a string, or a date — the compiler picks the right one from the argument types.
+
+You can distinguish overloads in three ways: by the number of parameters, by their types, and by the order of those types. The return type does **not** participate in resolution: two methods that differ only by return type cause a compile error, because the call site does not always state the return type, so the compiler would have no basis to choose.
+
+Overload resolution works like this: the compiler gathers all accessible methods with that name, drops the inapplicable ones (whose parameters the arguments cannot convert to), and picks the "best" among the rest. Better means more precise argument conversions: `int` → `int` beats `int` → `double`, and `int` → `int` beats `int` → `long`. When no overload wins clearly, you get an "ambiguous call" error and must cast the arguments explicitly to guide the compiler. The usual suspects are `params` parameters, optional parameters, and generics — they breed surprises.
+
+Scope is the region of the program where a name is visible. C# has several levels: block (inside `{ }`), method, class, and assembly (via `internal`/`public`). A variable declared in a block lives only in that block and disappears when the block closes — like rooms in a house: in the kitchen you see kitchen items, but not those locked in the bedroom.
+
+Shadowing happens when an inner scope declares a name identical to one in an outer scope. Class fields and method locals are the classic case: if a method declares a local `count` while the class has a field `count`, the local "shadows" the field. This is a frequent source of bugs; to refer to the field explicitly, use `this.count`. A local and a parameter with the same name cause a compile error, which protects you from confusion.
+
+Local functions, introduced in C# 7 and refined since, are methods declared inside another method. They are visible only inside their parent method, automatically "capture" its local variables (closure), and are handy for helper logic needed nowhere else. Compared with lambda expressions, local functions are more efficient (no needless delegate allocations), support recursion naturally, and can be optimized with the `static` modifier, which forbids captures.
+
+#### Пример кода / Code Example
+
+```csharp
+// C# 12 / .NET 8 — top-level statements
+// Демонстрация перегрузки, области видимости и локальных функций
+// Demo of overloading, scope, and local functions
+
+using System.Globalization;
+
+// --- Перегрузка методов / Method overloading ---
+Calculator calc = new();
+
+Console.WriteLine(calc.Add(2, 3));              // 5     — int-перегрузка / int overload
+Console.WriteLine(calc.Add(2.5, 3.5));          // 6     — double-перегрузка / double overload
+Console.WriteLine(calc.Add(2, 3, 4));           // 9     — три параметра / three params
+Console.WriteLine(calc.Add([1, 2, 3, 4]));      // 10    — params + коллекция / params + collection
+
+// Неоднозначность: без явного приведения возникает ошибка компиляции.
+// Ambiguity: without an explicit cast, this is a compile error.
+// Console.WriteLine(calc.Add(1, 2L));          // int + long — неоднозначно / ambiguous
+Console.WriteLine(calc.Add(1, (double)2L));     // подсказка компилятору / hint to the compiler
+
+// --- Область видимости и shadowing / Scope and shadowing ---
+Counter counter = new(name: "orders");
+for (int i = 0; i < 3; i++)
+{
+    counter.Increment();
+}
+Console.WriteLine(counter.Report());            // "orders: 3"
+
+// --- Локальная функция / Local function ---
+string slug = TextUtils.Slugify("Привет, Мир! C# 12 🚀");
+Console.WriteLine(slug);                        // "privet-mir-c-12"
+
+class Calculator
+{
+    // Перегрузки различаются типами и числом параметров.
+    // Overloads differ by types and parameter count.
+    public int Add(int a, int b) => a + b;
+    public double Add(double a, double b) => a + b;
+    public int Add(int a, int b, int c) => a + b + c;
+    public int Add(params int[] values) => values.Sum();
+
+    // public long Add(int a, long b) => a + b;     // ⚠ с int+double выше — неоднозначно / ambiguous with int+double above
+}
+
+class Counter
+{
+    private int _count;        // поле класса / class field
+    private readonly string _name;
+
+    public Counter(string name)
+    {
+        _name = name;
+        _count = 0;
+    }
+
+    public void Increment()
+    {
+        // Локальная переменная _count «заслонила» бы поле, если бы имела то же имя.
+        // A local _count would shadow the field; using _count field directly avoids it.
+        _count++;
+    }
+
+    public string Report()
+    {
+        // Локальная функция видна только внутри Report и захватывает _name и _count.
+        // Local function visible only inside Report; captures _name and _count.
+        string Describe() => $"{_name}: {_count}";
+        return Describe();
+    }
+}
+
+static class TextUtils
+{
+    public static string Slugify(string text)
+    {
+        // Локальная static-функция не захватывает переменные внешнего метода —
+        // это эффективнее и явно запрещает случайные захваты.
+        // A static local function captures nothing from the outer method —
+        // more efficient and forbids accidental captures.
+        static string Transliterate(char c) => c switch
+        {
+            'а' => "a", 'б' => "b", 'в' => "v", 'г' => "g", 'д' => "d",
+            'е' => "e", 'ё' => "e", 'ж' => "zh", 'з' => "z", 'и' => "i",
+            'й' => "y", 'к' => "k", 'л' => "l", 'м' => "m", 'н' => "n",
+            'о' => "o", 'п' => "p", 'р' => "r", 'с' => "s", 'т' => "t",
+            'у' => "u", 'ф' => "f", 'х' => "h", 'ц' => "ts", 'ч' => "ch",
+            'ш' => "sh", 'щ' => "sch", 'ъ' => "", 'ы' => "y", 'ь' => "",
+            'э' => "e", 'ю' => "yu", 'я' => "ya",
+            _ => char.IsLetterOrDigit(c) ? c.ToString() : "-"
+        };
+
+        string lower = text.ToLowerInvariant();
+        var parts = lower.Select(Transliterate)
+                         .SelectMany(s => s)
+                         .ToArray();
+
+        string joined = string.Concat(parts);
+        return TrimDashes(joined);
+
+        // Локальная функция-помощник, объявленная после return, но видна во всем методе.
+        // Local helper declared after the return, yet visible throughout the method.
+        static string TrimDashes(string s) =>
+            s.Replace("--", "-", StringComparison.Ordinal)
+             .Trim('-')
+             .ToLower(CultureInfo.InvariantCulture);
+    }
+}
+```
+
+#### Best Practices
+
+- Давайте перегрузкам осмысленные варианты и не плодите их ради каждого типа — лучше несколько типов, чем десяток почти идентичных перегрузок. / Give overloads meaningful variants and don't multiply them for every type — a few well-chosen overloads beat a dozen near-duplicates.
+- Если перегрузки часто вызываются с одинаковыми «хвостами» параметров, рассмотрите опциональные параметры, но помните, что они встраиваются в сигнатуру и ломают совместимость при изменении значений по умолчанию. / When overloads share common parameter "tails", consider optional parameters — but remember defaults are baked into the call site and break compatibility when changed.
+- Избегайте перекрытия имен поля локальной переменной; используйте префикс `_` для полей или `this.` для явного доступа. / Avoid naming a local the same as a field; use an `_` prefix for fields or `this.` for explicit access.
+- Предпочитайте локальные функции лямбдам для рекурсивной или выделенной вспомогательной логики внутри метода; добавляйте `static`, когда захват не нужен. / Prefer local functions over lambdas for recursive or dedicated helper logic inside a method; add `static` when no capture is needed.
+
+#### Частые ошибки / Common Mistakes
+
+- Две перегрузки, отличающиеся только возвращаемым типом → компилятор выдаст ошибку; различайте их параметрами. / Two overloads differing only by return type → compiler error; differentiate by parameters.
+- Вызов `Add(1, 2L)` с перегрузками `(int,int)` и `(double,double)` → неоднозначность; приведите аргументы явно: `Add((double)1, (double)2L)`. / Calling `Add(1, 2L)` with `(int,int)` and `(double,double)` overloads → ambiguity; cast explicitly.
+- Локальная переменная `count` «заслонила» поле класса `count` и вы случайно меняли локальную вместо поля → переименуйте локальную или обращайтесь к полю через `this.count`. / A local `count` shadowed the class field `count` and you mutated the local by mistake → rename the local or reach the field via `this.count`.
+- Локальная функция объявлена после `return`, но вы уверены, что она недоступна → на самом деле локальные функции видны во всем теле метода независимо от порядка. / A local function declared after `return` seems unreachable → in fact local functions are visible throughout the whole method body regardless of order.
+- `params`-перегрузка «поглощает» вызовы, которые вы рассчитывали отправить в конкретную перегрузку → ставьте `params`-версию последней и предпочитайте конкретные перегрузки для частых случаев. / A `params` overload "swallows" calls meant for a specific overload → place the `params` version last and provide concrete overloads for the common cases.
+
+#### Чек-лист самопроверки / Self-check Checklist
+
+- [ ] Все перегрузки метода имеют одно имя, но разные списки параметров (число/тип/порядок).
+- [ ] Ни одна пара перегрузок не отличается только возвращаемым типом.
+- [ ] Я проверил «неоднозначные» вызовы (int+long, int+double, params) явными приведениями.
+- [ ] Локальные переменные не перекрывают поля класса (или я использую `this.` / префикс `_`).
+- [ ] Локальные функции применяются для вспомогательной логики внутри метода; `static` стоит там, где захват не нужен.
+- [ ] Код компилируется на C# 12 / .NET 8 без предупреждений уровня error.
+- [ ] All overloads share one name but differ in parameter list (count/type/order).
+- [ ] No pair of overloads differs only by return type.
+- [ ] I checked ambiguous calls (int+long, int+double, params) with explicit casts.
+- [ ] Locals do not shadow class fields (or I use `this.` / `_` prefix).
+- [ ] Local functions are used for helper logic inside a method; `static` is set where no capture is needed.
+- [ ] The code compiles on C# 12 / .NET 8 with no error-level warnings.
+
+#### Ресурсы / Resources
+
+- [Microsoft Learn — https://learn.microsoft.com/dotnet/csharp/methods#overloading — Методы: перегрузка / Methods: overloading](https://learn.microsoft.com/dotnet/csharp/methods#overloading)
+- [Microsoft Learn — https://learn.microsoft.com/dotnet/csharp/programming-guide/classes-and-structs/local-functions — Локальные функции / Local functions](https://learn.microsoft.com/dotnet/csharp/programming-guide/classes-and-structs/local-functions)
+
+---
+[← Предыдущий: M03-L06](lesson-M03-L06-ref-out-in-params.md) | [⬆ К модулю M03](../README.md) | [Следующий: M03-L08 →](lesson-M03-L08-recursion.md)
+---

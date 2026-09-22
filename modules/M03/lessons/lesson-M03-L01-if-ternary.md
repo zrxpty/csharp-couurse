@@ -1,0 +1,190 @@
+---
+[← Предыдущий: M02-L08](lesson-M02-L08-enum-tuples.md) | [⬆ К модулю M03](../README.md) | [Следующий: M03-L02 →](lesson-M03-L02-switch-patterns.md)
+---
+
+### Урок M03-L01: if/else, тернарный оператор / if/else, ternary operator
+
+**Время / Time:** 30 мин теория + 45 мин практика
+
+#### Теория / Theory
+
+Условные конструкции — это «развилки на дороге» вашей программы. Каждый раз, когда код должен принять решение («если пользователь авторизован — показать профиль, иначе — форму входа»), вы используете `if/else`.
+
+Базовая форма `if` проверяет логическое выражение. Если оно истинно — выполняется блок. `else if` позволяет проверить несколько взаимоисключающих веток подряд, а `else` — это «всё остальное», страховка по умолчанию. Важно понимать: `else` привязывается к ближайшему `if` без своего `else`, поэтому при вложенности рекомендуется ставить фигурные скобки `{}` всегда — это устраняет неоднозначность (классическая «проблема висячего else»).
+
+Логические операторы соединяют условия. `&&` (И) требует, чтобы оба условия были истинны; `||` (ИЛИ) — хотя бы одно; `!` (НЕ) инвертирует. Они используют *short-circuit evaluation* (короткое замыкание): для `&&`, если левый операнд ложен, правый не вычисляется; для `||`, если левый истинен, правый пропускается. Это и оптимизация, и защита: `user != null && user.IsActive` безопасно — если `user` равен `null`, обращение `user.IsActive` не произойдёт. Существует также побитовая пара `&` / `|`, которая **всегда** вычисляет оба операнда — в условиях её почти никогда не используют.
+
+Вложенность vs flattening (уплощение). Легко написать «лесенку» из вложенных `if` внутри `if`, но каждый уровень вложенности увеличивает когнитивную нагрузку — вам приходится держать в голове всё больше контекста. Глубина больше 2–3 уровней — сигнал к рефакторингу. Два приёма уплощения: **guard clauses** (охраняющие условия, ранний возврат) и тернарный оператор для простых выбора значения.
+
+Guard clauses (ранний возврат) меняют логику с «если всё хорошо — то продолжаем» на «если что-то не так — сразу выходим». Вместо того чтобы оборачивать весь метод в гигантский `if`, вы проверяете предусловия в начале и возвращаетесь (`return`) или выбрасываете исключение. Основной сценарий остаётся на верхнем уровне отступа — его легко читать. Пример: вместо `if (data != null) { if (data.IsValid) { /* 50 строк */ } }` напишите `if (data is null) return; if (!data.IsValid) return; /* 50 строк */`.
+
+Тернарный оператор `?:` — это *выражение*, а не оператор. Синтаксис: `condition ? valueIfTrue : valueIfFalse`. В отличие от `if`, который *выполняет операторы*, тернарный *возвращает значение*, поэтому он идеален для инициализации: `var label = count == 0 ? "пусто" : count.ToString();`. Не используйте тернар для побочных эффектов и не вкладывайте его вглубь (`a ? b ? c : d : e`) — это нечитаемо. Одно условие — отличный случай; два уже подозрительны; три — табу.
+
+В C# 7+ и особенно в C# 8–12 появилось *pattern matching* в `if`: `if (obj is string s)`, `if (user is { IsActive: true, Age: >= 18 })`. Это мощный способ совместить проверку типа, проверку свойств и извлечение значения в одном выражении, часто заменяя длинные цепочки `if/else if`. Для выбора по значению в C# 8+ также есть switch expression, но это тема отдельного урока.
+
+#### Theory (EN)
+
+Conditional constructs are the "forks in the road" of your program. Whenever code must make a decision ("if the user is signed in — show their profile; otherwise — show the login form"), you reach for `if/else`.
+
+The basic `if` evaluates a Boolean expression. When it is true, the block runs. `else if` lets you check several mutually exclusive branches in sequence, while `else` is the "everything else" fallback. One subtlety: an `else` binds to the nearest `if` that does not already have one — the classic "dangling else." Always use braces `{}` to remove ambiguity, even for one-line bodies.
+
+Logical operators combine conditions. `&&` (AND) requires both sides to be true; `||` (OR) requires at least one; `!` (NOT) inverts. They use *short-circuit evaluation*: for `&&`, if the left operand is false the right is never evaluated; for `||`, if the left is true the right is skipped. This is both an optimization and a safety guard: `user != null && user.IsActive` is safe — if `user` is null, `user.IsActive` is never touched. A bitwise cousin pair `&` / `|` *always* evaluates both operands and is almost never used inside conditions.
+
+Nesting vs flattening. It is easy to build a "ladder" of nested `if` inside `if`, but each level of nesting increases cognitive load — you must keep more context in your head. A depth beyond two or three levels is a signal to refactor. Two flattening techniques stand out: **guard clauses** (early return) and the ternary operator for simple value choices.
+
+Guard clauses flip the logic from "if everything is fine, we continue" to "if something is wrong, leave immediately." Instead of wrapping an entire method in a giant `if`, you check preconditions at the top and `return` (or throw). The main scenario stays at the top indentation level and is easy to read. Example: instead of `if (data != null) { if (data.IsValid) { /* 50 lines */ } }`, write `if (data is null) return; if (!data.IsValid) return; /* 50 lines */`.
+
+The ternary operator `?:` is an *expression*, not a statement. Syntax: `condition ? valueIfTrue : valueIfFalse`. Unlike `if`, which *executes statements*, the ternary *returns a value*, so it is perfect for initialization: `var label = count == 0 ? "empty" : count.ToString();`. Do not use it for side effects and do not nest it deeply (`a ? b ? c : d : e`) — that is unreadable. One condition: great; two: suspicious; three: forbidden.
+
+C# 7+ and especially C# 8–12 added *pattern matching* inside `if`: `if (obj is string s)`, `if (user is { IsActive: true, Age: >= 18 })`. This is a powerful way to combine a type check, property checks, and value extraction in a single expression, often replacing long `if/else if` chains. For value-based selection C# 8+ also offers switch expressions, but that is a topic for a separate lesson.
+
+#### Пример кода / Code Example
+```csharp
+// C# 12 / .NET 8 — top-level statements
+// Демонстрация if/else if/else, логических операторов, guard clauses и тернарного оператора.
+// Demonstrates if/else if/else, logical operators, guard clauses, and the ternary operator.
+
+using System;
+using System.Collections.Generic;
+
+// --- Модель данных / Data model ---
+public record User(string Name, int Age, bool IsActive, string? Email = null);
+
+// --- Guard clauses (ранний возврат) / Guard clauses (early return) ---
+// Вместо вложенных if оборачивающих метод, мы отсекаем невалидные случаи сразу.
+// Instead of nested ifs wrapping the method, we reject invalid cases up front.
+public static string Describe(User? user)
+{
+    if (user is null)                 // guard 1 / guard 1
+        return "Нет пользователя / No user";
+
+    if (!user.IsActive)              // guard 2 / guard 2
+        return $"{user.Name}: неактивен / inactive";
+
+    if (user.Age < 0 || user.Age > 150)  // guard 3 с логическим ИЛИ / guard 3 with logical OR
+        return $"{user.Name}: некорректный возраст / invalid age";
+
+    // Основной сценарий остаётся на верхнем уровне отступа — легко читать.
+    // The main scenario stays at the top indentation level — easy to read.
+
+    // Тернарный оператор как выражение (возвращает значение).
+    // Ternary operator used as an expression (returns a value).
+    var role = user.Age >= 18
+        ? "взрослый / adult"
+        : "несовершеннолетний / minor";
+
+    // Короткое замыкание &&: если Email null, проверка длины не выполняется.
+    // Short-circuit &&: if Email is null, the length check is skipped.
+    var hasValidEmail = user.Email is not null && user.Email.Contains('@');
+
+    var emailNote = hasValidEmail
+        ? $"email: {user.Email}"
+        : "email: нет / none";
+
+    return $"{user.Name}, {user.Age} лет/years — {role}; {emailNote}";
+}
+
+// --- if/else if/else + pattern matching в C# 12 ---
+// if/else if/else + C# 12 pattern matching
+public static string Classify(int score) => score switch
+{
+    < 0 or > 100 => "некорректно / invalid",          // или через if/else if/else ниже
+    >= 90        => "отлично / excellent",
+    >= 75        => "хорошо / good",
+    >= 50        => "удовлетворительно / satisfactory",
+    _            => "неудовлетворительно / fail"
+};
+
+// Та же логика классическим if/else if/else — для сравнения.
+// Same logic with classic if/else if/else — for comparison.
+public static string ClassifyWithIf(int score)
+{
+    if (score < 0 || score > 100)
+        return "некорректно / invalid";
+    else if (score >= 90)
+        return "отлично / excellent";
+    else if (score >= 75)
+        return "хорошо / good";
+    else if (score >= 50)
+        return "удовлетворительно / satisfactory";
+    else
+        return "неудовлетворительно / fail";
+}
+
+// --- Pattern matching с проверкой свойств (C# 8+) ---
+// Property pattern matching (C# 8+)
+public static bool CanVote(User u) =>
+    u is { IsActive: true, Age: >= 18 };  // заменяет u != null && u.IsActive && u.Age >= 18
+
+// --- Демонстрация / Demo ---
+var users = new List<User?>
+{
+    new("Анна", 30, true, "anna@example.com"),
+    new("Борис", 15, true, null),
+    new("Виктор", -1, true),
+    new("Галина", 25, false),
+    null
+};
+
+foreach (var u in users)
+{
+    Console.WriteLine(Describe(u));
+}
+
+// Пример вывода / Sample output:
+// Анна, 30 лет/years — взрослый / adult; email: anna@example.com
+// Борис, 15 лет/years — несовершеннолетний / minor; email: нет / none
+// Виктор: некорректный возраст / invalid age
+// Галина: неактивен / inactive
+// Нет пользователя / No user
+```
+
+#### Best Practices
+- Всегда используйте фигурные скобки `{}` даже для однострочных `if` — это исключает ошибки при будущих правках и проблему «висячего else».
+- Предпочитайте guard clauses (ранний возврат) вложенным `if` — основной сценарий должен читаться слева направо без «лесенки».
+- Используйте тернарный оператор только для выбора значения в одну строку; не вкладывайте его глубже одного уровня и не применяйте для побочных эффектов.
+- Заменяйте длинные цепочки `if/else if` на switch expression или pattern matching (`is { ... }`) — это компактнее и понятнее.
+- Располагайте ветки от наиболее вероятных к наименее вероятным — это помогает читателю и (в редких случаях) производительности.
+- Always use braces `{}` even for one-line `if` bodies — it prevents bugs during future edits and avoids the "dangling else."
+- Prefer guard clauses (early return) over nested `if` — the main flow should read left to right without a "ladder."
+- Use the ternary operator only for single-line value selection; never nest it beyond one level and never use it for side effects.
+- Replace long `if/else if` chains with switch expressions or pattern matching (`is { ... }`) — more compact and clearer.
+- Order branches from most likely to least likely — it aids the reader and (rarely) performance.
+
+#### Частые ошибки / Common Mistakes
+- `if (x = 5)` — присваивание вместо сравнения → в C# для `int` это ошибка компиляции, но для `bool` пройдёт; всегда пишите `==`, а константы слева: `if (5 == x)`.
+- Забыли `else` в цепочке и условия не взаимоисключающие → несколько веток сработают подряд; продумайте, нужны ли вам `else if` или независимые `if`.
+- Вложенность 4+ уровня → вынесите внутреннюю логику в отдельный метод или примените guard clauses.
+- `if (list != null & list.Count > 0)` — побитовое `&` вместо `&&` вызывает `NullReferenceException`, потому что правый операнд вычисляется всегда → используйте `&&`.
+- Вложенный тернар `a ? b ? c : d : e` → непонятно; разберите на `if` или отдельные переменные.
+- Слишком много логики в условии: `if (a && b || c && !d && (e || f))` → вынесите в именованный метод/переменную `bool isEligible = ...`.
+- `if (x = 5)` — assignment instead of comparison → for `int` it is a compile error, but for `bool` it slips through; use `==`, or put the constant first: `if (5 == x)`.
+- Forgot `else` in a chain and the conditions are not mutually exclusive → several branches fire in a row; decide whether you need `else if` or independent `if`s.
+- Nesting 4+ levels deep → extract inner logic into a separate method or use guard clauses.
+- `if (list != null & list.Count > 0)` — bitwise `&` instead of `&&` throws `NullReferenceException` because the right operand always evaluates → use `&&`.
+- Nested ternary `a ? b ? c : d : e` → unreadable; break it into `if` or separate variables.
+- Too much logic in one condition: `if (a && b || c && !d && (e || f))` → extract into a named method/variable `bool isEligible = ...`.
+
+#### Чек-лист самопроверки / Self-check Checklist
+- [ ] Все `if`/`else if`/`else` обрамлены фигурными скобками `{}`.
+- [ ] Ветви `if/else if` действительно взаимоисключающие там, где это нужно.
+- [ ] Нет вложенности глубже 2–3 уровней; при превышении применены guard clauses.
+- [ ] Использую `&&` / `||` с коротким замыканием, а не `&` / `|`.
+- [ ] Тернарный оператор применён только для выбора значения и не вложен глубоко.
+- [ ] Там, где уместно, использован pattern matching (`is { ... }`) вместо длинных проверок на `null` и свойств.
+- [ ] Код компилируется под C# 12 / .NET 8 и не содержит `TODO`.
+- [ ] Every `if`/`else if`/`else` is wrapped in braces `{}`.
+- [ ] `if/else if` branches are genuinely mutually exclusive where required.
+- [ ] No nesting deeper than 2–3 levels; guard clauses used when exceeded.
+- [ ] Using short-circuit `&&` / `||`, not `&` / `|`.
+- [ ] Ternary operator is used only for value selection and is not deeply nested.
+- [ ] Pattern matching (`is { ... }`) is used where appropriate instead of long null/property checks.
+- [ ] Code compiles under C# 12 / .NET 8 and contains no `TODO`.
+
+#### Ресурсы / Resources
+- Microsoft Learn — https://learn.microsoft.com/dotnet/csharp/language-reference/statements/selection-statements — Selection statements (if, switch) / Операторы выбора (if, switch)
+- Microsoft Learn — https://learn.microsoft.com/dotnet/csharp/language-reference/operators/conditional-operator — Conditional operator ?: / Условный оператор ?:
+
+---
+[← Предыдущий: M02-L08](lesson-M02-L08-enum-tuples.md) | [⬆ К модулю M03](../README.md) | [Следующий: M03-L02 →](lesson-M03-L02-switch-patterns.md)
+---
